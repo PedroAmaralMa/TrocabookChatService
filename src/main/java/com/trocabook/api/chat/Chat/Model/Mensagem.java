@@ -27,8 +27,8 @@ public class Mensagem {
         return cdUsuarioRemetente;
     }
 
-    public void setCdUsuarioRemetente(int cdUsuarioRemente) {
-        this.cdUsuarioRemetente = cdUsuarioRemente;
+    public void setCdUsuarioRemetente(int cdUsuarioRemetente) {
+        this.cdUsuarioRemetente = cdUsuarioRemetente;
     }
 
     public int getCdUsuarioDestinatario() {
