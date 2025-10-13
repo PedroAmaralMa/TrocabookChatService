@@ -24,35 +24,35 @@ public class ChatController {
     }
 
     @PostMapping("/mensagens")
-    public ResponseEntity<ApiResponse<Mensagem>> salvarMensagem(@RequestBody MensagemDTO mensagem){
+    public ResponseEntity<ApiResponse<MensagemDTO>> salvarMensagem(@RequestBody MensagemDTO mensagem){
         try{
-            Mensagem mensagemSalva = chatService.enviarMensagem(mensagem);
-            ApiResponse<Mensagem> response = new ApiResponse<>(mensagemSalva, "Mensagem Salva com sucesso");
+            MensagemDTO mensagemSalva = chatService.enviarMensagem(mensagem);
+            ApiResponse<MensagemDTO> response = new ApiResponse<>(mensagemSalva, "Mensagem Salva com sucesso");
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch(IllegalStateException e){
-            ApiResponse<Mensagem> response = new ApiResponse<>(e.getMessage());
+            ApiResponse<MensagemDTO> response = new ApiResponse<>(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         } catch (Exception e){
-            ApiResponse<Mensagem> response = new ApiResponse<>("Erro ao enviar Mensagem");
+            ApiResponse<MensagemDTO> response = new ApiResponse<>("Erro ao enviar Mensagem");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
     @GetMapping("/mensagens")
-    public ResponseEntity<ApiResponse<List<Mensagem>>> listarMensagens(
+    public ResponseEntity<ApiResponse<List<MensagemDTO>>> listarMensagens(
             @RequestParam(name = "remetente") int cdRemetente,
             @RequestParam(name = "destinatario", required = false) Integer cdDestinatario){
         try{
-            List<Mensagem> mensagens;
+            List<MensagemDTO> mensagens;
             if (cdDestinatario == null){
                 mensagens = chatService.listarMensagensPorUsuarioDataEnvioDecrescente(cdRemetente);
             } else {
                 mensagens = chatService.listarMensagensEntreUsuarios(cdRemetente, cdDestinatario);
             }
-            ApiResponse<List<Mensagem>> response = new ApiResponse<>(mensagens, "Mensagens Carregadas");
+            ApiResponse<List<MensagemDTO>> response = new ApiResponse<>(mensagens, "Mensagens Carregadas");
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e){
-            ApiResponse<List<Mensagem>> response = new ApiResponse<>(e.getMessage());
+            ApiResponse<List<MensagemDTO>> response = new ApiResponse<>(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 
         }

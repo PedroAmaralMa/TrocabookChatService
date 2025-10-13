@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -19,31 +20,46 @@ public class ChatService implements IChatService{
 
     }
 
-    public Mensagem enviarMensagem(MensagemDTO mensagemDTO){
+    public MensagemDTO enviarMensagem(MensagemDTO mensagemDTO){
         Mensagem mensagem = new Mensagem();
         mensagem.setCdUsuarioDestinatario(mensagemDTO.getCdUsuarioDestinatario());
         mensagem.setConteudo(mensagemDTO.getConteudo());
         mensagem.setCdUsuarioRemetente(mensagemDTO.getCdUsuarioRemetente());
         mensagem.setDataEnvio(LocalDateTime.now());
-        return mensagemRepository.save(mensagem);
+        mensagemRepository.save(mensagem);
+        return mensagemDTO;
 
 
 
     }
 
-    public List<Mensagem> listarMensagensEntreUsuarios(int cdUsuarioDestinatario, int cdUsuarioRemetente){
-        return mensagemRepository.findByCdUsuarioRemetenteAndCdUsuarioDestinatarioOrCdUsuarioDestinatarioAndCdUsuarioRemetente(cdUsuarioRemetente, cdUsuarioDestinatario, cdUsuarioDestinatario, cdUsuarioRemetente);
+    public List<MensagemDTO> listarMensagensEntreUsuarios(int cdUsuarioDestinatario, int cdUsuarioRemetente){
+        return transformarListaMensagemEmListaMensagemDTO(
+                mensagemRepository.findByCdUsuarioRemetenteAndCdUsuarioDestinatarioOrCdUsuarioDestinatarioAndCdUsuarioRemetente
+                (cdUsuarioRemetente, cdUsuarioDestinatario, cdUsuarioDestinatario, cdUsuarioRemetente));
 
     }
 
-    public List<Mensagem> listarMensagensPorUsuario(int cdUsuarioRemetente){
-        return mensagemRepository.findByCdUsuarioRemetente(cdUsuarioRemetente);
+    public List<MensagemDTO> listarMensagensPorUsuario(int cdUsuarioRemetente){
+        return transformarListaMensagemEmListaMensagemDTO(mensagemRepository.findByCdUsuarioRemetente(cdUsuarioRemetente));
 
     }
 
-    public List<Mensagem> listarMensagensPorUsuarioDataEnvioDecrescente(int cdUsuarioRemetente){
-        return mensagemRepository.findByCdUsuarioRemetenteOrderByDataEnvioDesc(cdUsuarioRemetente);
+    public List<MensagemDTO> listarMensagensPorUsuarioDataEnvioDecrescente(int cdUsuarioRemetente){
+        return transformarListaMensagemEmListaMensagemDTO(mensagemRepository.findByCdUsuarioRemetenteOrderByDataEnvioDesc(cdUsuarioRemetente));
 
+    }
+
+    private List<MensagemDTO> transformarListaMensagemEmListaMensagemDTO(List<Mensagem> lista){
+        List<MensagemDTO> listaDTO = new ArrayList<>();
+        for (Mensagem mensagem : lista){
+            MensagemDTO mensagemDTO = new MensagemDTO();
+            mensagemDTO.setConteudo(mensagem.getConteudo());
+            mensagemDTO.setCdUsuarioDestinatario(mensagem.getCdUsuarioDestinatario());
+            mensagemDTO.setCdUsuarioRemetente(mensagem.getCdUsuarioRemetente());
+            listaDTO.add(mensagemDTO);
+        }
+        return listaDTO;
     }
 
 
