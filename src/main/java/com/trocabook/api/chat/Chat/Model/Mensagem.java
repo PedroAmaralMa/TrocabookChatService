@@ -12,6 +12,7 @@ public class Mensagem {
 
     private int cdUsuarioRemetente;
     private int cdUsuarioDestinatario;
+    private int cdUsuarioLivro;
     private String conteudo;
     private LocalDateTime dataEnvio;
 
@@ -53,5 +54,13 @@ public class Mensagem {
 
     public void setDataEnvio(LocalDateTime dataEnvio) {
         this.dataEnvio = dataEnvio;
+    }
+
+    public int getCdUsuarioLivro() {
+        return cdUsuarioLivro;
+    }
+
+    public void setCdUsuarioLivro(int cdUsuarioLivro) {
+        this.cdUsuarioLivro = cdUsuarioLivro;
     }
 }

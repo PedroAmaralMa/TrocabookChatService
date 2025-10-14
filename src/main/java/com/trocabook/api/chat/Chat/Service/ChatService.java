@@ -25,6 +25,7 @@ public class ChatService implements IChatService{
         mensagem.setCdUsuarioDestinatario(mensagemDTO.getCdUsuarioDestinatario());
         mensagem.setConteudo(mensagemDTO.getConteudo());
         mensagem.setCdUsuarioRemetente(mensagemDTO.getCdUsuarioRemetente());
+        mensagem.setCdUsuarioLivro(mensagemDTO.getCdUsuarioLivro());
         mensagem.setDataEnvio(LocalDateTime.now());
         mensagemRepository.save(mensagem);
         return mensagemDTO;
@@ -35,7 +36,7 @@ public class ChatService implements IChatService{
 
     public List<MensagemDTO> listarMensagensEntreUsuarios(int cdUsuarioDestinatario, int cdUsuarioRemetente){
         return transformarListaMensagemEmListaMensagemDTO(
-                mensagemRepository.findByCdUsuarioRemetenteAndCdUsuarioDestinatarioOrCdUsuarioDestinatarioAndCdUsuarioRemetente
+                mensagemRepository.findByCdUsuarioRemetenteAndCdUsuarioDestinatarioOrCdUsuarioDestinatarioAndCdUsuarioRemetenteOrderByDataEnvioAsc
                 (cdUsuarioRemetente, cdUsuarioDestinatario, cdUsuarioDestinatario, cdUsuarioRemetente));
 
     }
