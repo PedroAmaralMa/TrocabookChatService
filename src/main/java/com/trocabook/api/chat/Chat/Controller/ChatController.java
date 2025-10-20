@@ -41,22 +41,27 @@ public class ChatController {
     @GetMapping("/mensagens")
     public ResponseEntity<ApiResponse<List<MensagemDTO>>> listarMensagens(
             @RequestParam(name = "remetente") int cdRemetente,
-            @RequestParam(name = "destinatario", required = false) Integer cdDestinatario){
-        try{
+            @RequestParam(name = "destinatario", required = false) Integer cdDestinatario,
+            @RequestParam(name = "usuarioLivro", required = false) Integer cdUsuarioLivro) {
+
+        try {
             List<MensagemDTO> mensagens;
-            if (cdDestinatario == null){
+
+            if (cdDestinatario == null) {
                 mensagens = chatService.listarMensagensPorUsuarioDataEnvioDecrescente(cdRemetente);
             } else {
-                mensagens = chatService.listarMensagensEntreUsuarios(cdRemetente, cdDestinatario);
+                mensagens = chatService.listarMensagensEntreUsuarios(cdUsuarioLivro, cdRemetente, cdDestinatario);
             }
+
             ApiResponse<List<MensagemDTO>> response = new ApiResponse<>(mensagens, "Mensagens Carregadas");
             return ResponseEntity.status(HttpStatus.OK).body(response);
-        } catch (Exception e){
+
+        } catch (Exception e) {
             ApiResponse<List<MensagemDTO>> response = new ApiResponse<>(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-
         }
     }
+
 
 
 

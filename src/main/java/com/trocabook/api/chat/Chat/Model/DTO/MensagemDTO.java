@@ -1,10 +1,20 @@
 package com.trocabook.api.chat.Chat.Model.DTO;
 
+import com.trocabook.api.chat.Chat.Model.Mensagem;
+
 public class MensagemDTO {
     private int cdUsuarioRemetente;
     private int cdUsuarioDestinatario;
     private int cdUsuarioLivro;
     private String conteudo;
+    public MensagemDTO(Mensagem m) {
+        this.cdUsuarioRemetente = m.getCdUsuarioRemetente();
+        this.cdUsuarioDestinatario = m.getCdUsuarioDestinatario();
+        this.cdUsuarioLivro = m.getCdUsuarioLivro();
+        this.conteudo = m.getConteudo();
+    }
+
+    public MensagemDTO() {}
 
     public int getCdUsuarioRemetente() {
         return cdUsuarioRemetente;

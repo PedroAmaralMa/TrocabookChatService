@@ -8,7 +8,7 @@ import java.util.List;
 public interface IChatService {
     MensagemDTO enviarMensagem(MensagemDTO mensagemDTO);
 
-    List<MensagemDTO> listarMensagensEntreUsuarios(int cdUsuarioDestinatario, int cdUsuarioRemetente);
+    List<MensagemDTO> listarMensagensEntreUsuarios(int cdUsuarioLivro, int cdUsuarioDestinatario, int cdUsuarioRemetente);
 
     List<MensagemDTO> listarMensagensPorUsuario(int cdUsuario);
 
