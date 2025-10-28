@@ -1,5 +1,6 @@
 package com.trocabook.api.chat.Chat.Model;
 
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -9,9 +10,9 @@ import java.time.LocalDateTime;
 public class MensagemBackup {
 
     @Id
-    private String id;
+    private ObjectId id;
 
-    private String idMensagemOriginal; // referência da mensagem
+    private ObjectId idMensagemOriginal; // referência da mensagem
     private int cdUsuarioRemetente;
     private int cdUsuarioDestinatario;
     private int cdUsuarioLivro;
@@ -42,19 +43,19 @@ public class MensagemBackup {
     }
 
 
-    public String getId() {
+    public ObjectId getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(ObjectId id) {
         this.id = id;
     }
 
-    public String getIdMensagemOriginal() {
+    public ObjectId getIdMensagemOriginal() {
         return idMensagemOriginal;
     }
 
-    public void setIdMensagemOriginal(String idMensagemOriginal) {
+    public void setIdMensagemOriginal(ObjectId idMensagemOriginal) {
         this.idMensagemOriginal = idMensagemOriginal;
     }
 

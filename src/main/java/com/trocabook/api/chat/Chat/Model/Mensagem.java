@@ -1,5 +1,6 @@
 package com.trocabook.api.chat.Chat.Model;
 
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -8,7 +9,7 @@ import java.time.LocalDateTime;
 @Document(collection = "mensagens")
 public class Mensagem {
     @Id
-    private String id;
+    private ObjectId id;
 
     private int cdUsuarioRemetente;
     private int cdUsuarioDestinatario;
@@ -16,11 +17,11 @@ public class Mensagem {
     private String conteudo;
     private LocalDateTime dataEnvio;
 
-    public String getId() {
+    public ObjectId getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(ObjectId id) {
         this.id = id;
     }
 

@@ -5,6 +5,7 @@ import com.trocabook.api.chat.Chat.Model.Mensagem;
 import com.trocabook.api.chat.Chat.Model.MensagemBackup;
 import com.trocabook.api.chat.Chat.Repository.MensagemBackupRepository;
 import com.trocabook.api.chat.Chat.Repository.MensagemRepository;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +36,7 @@ public class ChatService implements IChatService{
         mensagem.setCdUsuarioLivro(mensagemDTO.getCdUsuarioLivro());
         mensagem.setDataEnvio(LocalDateTime.now());
         mensagemRepository.save(mensagem);
+        mensagemDTO.setId(mensagem.getId().toHexString());
         return mensagemDTO;
 
 
@@ -86,7 +88,8 @@ public class ChatService implements IChatService{
     }
 
     public boolean removerMensagem(String id) {
-        Mensagem mensagem = mensagemRepository.findById(id).orElse(null);
+        ObjectId idObjeto = new ObjectId(id);
+        Mensagem mensagem = mensagemRepository.findById(idObjeto).orElse(null);
         if (mensagem == null){
             return false;
         }
@@ -97,7 +100,8 @@ public class ChatService implements IChatService{
     }
 
     public Mensagem alterarMensagem(String id, String conteudo) {
-        Mensagem mensagem = mensagemRepository.findById(id).orElse(null);
+        ObjectId idObjeto = new ObjectId(id);
+        Mensagem mensagem = mensagemRepository.findById(idObjeto).orElse(null);
         if (mensagem == null){
             return null;
         }
