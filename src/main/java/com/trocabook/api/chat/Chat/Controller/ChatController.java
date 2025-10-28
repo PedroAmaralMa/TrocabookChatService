@@ -62,6 +62,45 @@ public class ChatController {
         }
     }
 
+    @PutMapping("/mensagens/{id}")
+    public ResponseEntity<ApiResponse<MensagemDTO>> atualizarMensagem(@PathVariable String id, @RequestBody String conteudo){
+        try {
+            Mensagem mensagem = chatService.alterarMensagem(id, conteudo);
+            if (mensagem != null){
+                MensagemDTO mensagemDTO = new MensagemDTO(mensagem);
+                ApiResponse<MensagemDTO> response = new ApiResponse<>(mensagemDTO, "Mensagem alterada com sucesso");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            }
+            ApiResponse<MensagemDTO> response = new ApiResponse<>("Mensagem não encontrada");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (IllegalStateException e){
+            ApiResponse<MensagemDTO> response = new ApiResponse<>(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e){
+            ApiResponse<MensagemDTO> response = new ApiResponse<>(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @DeleteMapping("/mensagens/{id}")
+    public ResponseEntity<ApiResponse<Void>> excluirMensagem(@PathVariable String id){
+        try {
+            boolean resultado = chatService.removerMensagem(id);
+            if (resultado){
+                ApiResponse<Void> response = new ApiResponse<>(null, "Mensagem removida com sucesso");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            }
+            ApiResponse<Void> response = new ApiResponse<>("Mensagem não encontrada");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (IllegalStateException e){
+            ApiResponse<Void> response = new ApiResponse<>(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e){
+            ApiResponse<Void> response = new ApiResponse<>(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
 
 
 

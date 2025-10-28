@@ -2,6 +2,8 @@ package com.trocabook.api.chat.Chat.Service;
 
 import com.trocabook.api.chat.Chat.Model.DTO.MensagemDTO;
 import com.trocabook.api.chat.Chat.Model.Mensagem;
+import com.trocabook.api.chat.Chat.Model.MensagemBackup;
+import com.trocabook.api.chat.Chat.Repository.MensagemBackupRepository;
 import com.trocabook.api.chat.Chat.Repository.MensagemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,9 +18,12 @@ import java.util.Map;
 public class ChatService implements IChatService{
 
     final MensagemRepository mensagemRepository;
+
+    final MensagemBackupRepository mensagemBackupRepository;
     @Autowired
-    public ChatService(MensagemRepository mensagemRepository){
+    public ChatService(MensagemRepository mensagemRepository, MensagemBackupRepository mensagemBackupRepository) {
         this.mensagemRepository = mensagemRepository;
+        this.mensagemBackupRepository = mensagemBackupRepository;
 
     }
 
@@ -49,35 +54,57 @@ public class ChatService implements IChatService{
     }
 
     public List<MensagemDTO> listarMensagensPorUsuarioDataEnvioDecrescente(int cdUsuarioRemetente){
-        // 1️⃣ Busca todas as mensagens em que o usuário participou
+
         List<Mensagem> todasMensagens =
                 mensagemRepository.findByCdUsuarioRemetenteOrCdUsuarioDestinatarioOrderByDataEnvioDesc(
                         cdUsuarioRemetente, cdUsuarioRemetente
                 );
 
-        // 2️⃣ Cria um mapa para garantir que só pegaremos uma mensagem por conversa
+
         Map<String, Mensagem> ultimaMensagemPorConversa = new LinkedHashMap<>();
 
-        // 3️⃣ Percorre todas as mensagens (já ordenadas da mais nova pra mais velha)
+
         for (Mensagem m : todasMensagens) {
-            // Identifica o outro usuário envolvido na conversa
+
             int outroUsuario = (m.getCdUsuarioRemetente() == cdUsuarioRemetente)
                     ? m.getCdUsuarioDestinatario()
                     : m.getCdUsuarioRemetente();
 
-            // Cria uma chave única pra identificar a conversa (livro + outro usuário)
+
             String chave = outroUsuario + "-" + m.getCdUsuarioLivro();
 
-            // 4️⃣ Se ainda não existe no mapa, adiciona (a primeira é a mais recente)
+
             ultimaMensagemPorConversa.putIfAbsent(chave, m);
         }
 
-        // 5️⃣ Converte os valores do mapa (as últimas mensagens) em DTOs
+
         return ultimaMensagemPorConversa
                 .values()
                 .stream()
                 .map(MensagemDTO::new)
                 .toList();
+    }
+
+    public boolean removerMensagem(String id) {
+        Mensagem mensagem = mensagemRepository.findById(id).orElse(null);
+        if (mensagem == null){
+            return false;
+        }
+        MensagemBackup mensagemBackup = new MensagemBackup(mensagem, MensagemBackup.TipoBackup.EXCLUSAO);
+        mensagemBackupRepository.save(mensagemBackup);
+        mensagemRepository.deleteById(mensagem.getId());
+        return true;
+    }
+
+    public Mensagem alterarMensagem(String id, String conteudo) {
+        Mensagem mensagem = mensagemRepository.findById(id).orElse(null);
+        if (mensagem == null){
+            return null;
+        }
+        MensagemBackup mensagemBackup = new MensagemBackup(mensagem, MensagemBackup.TipoBackup.ALTERACAO);
+        mensagemBackupRepository.save(mensagemBackup);
+        mensagem.setConteudo(conteudo);
+        return mensagemRepository.save(mensagem);
     }
 
 
@@ -90,6 +117,8 @@ public class ChatService implements IChatService{
         }
         return listaDTO;
     }
+
+
 
 
 }
