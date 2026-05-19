@@ -13,9 +13,9 @@ public class MensagemBackup {
     private ObjectId id;
 
     private ObjectId idMensagemOriginal; // referência da mensagem
-    private int cdUsuarioRemetente;
-    private int cdUsuarioDestinatario;
-    private int cdUsuarioLivro;
+    private String uidRemetente;
+    private String uidDestinatario;
+    private String uidAnuncio;
 
     private String conteudo;
     private LocalDateTime dataEnvio;
@@ -28,11 +28,11 @@ public class MensagemBackup {
 
     public MensagemBackup(Mensagem mensagem, TipoBackup tipoBackup) {
         this.setIdMensagemOriginal(mensagem.getId());
-        this.setCdUsuarioRemetente(mensagem.getCdUsuarioRemetente());
+        this.setUidRemetente(mensagem.getUidRemetente());
         this.setConteudo(mensagem.getConteudo());
-        this.setCdUsuarioLivro(mensagem.getCdUsuarioLivro());
+        this.setUidAnuncio(mensagem.getUidAnuncio());
         this.setDataEnvio(mensagem.getDataEnvio());
-        this.setCdUsuarioDestinatario(mensagem.getCdUsuarioDestinatario());
+        this.setUidDestinatario(mensagem.getUidDestinatario());
         this.setDataBackup(LocalDateTime.now());
         this.setTipoBackup(tipoBackup);
     }
@@ -59,28 +59,28 @@ public class MensagemBackup {
         this.idMensagemOriginal = idMensagemOriginal;
     }
 
-    public int getCdUsuarioRemetente() {
-        return cdUsuarioRemetente;
+    public String getUidRemetente() {
+        return uidRemetente;
     }
 
-    public void setCdUsuarioRemetente(int cdUsuarioRemetente) {
-        this.cdUsuarioRemetente = cdUsuarioRemetente;
+    public void setUidRemetente(String uidRemetente) {
+        this.uidRemetente = uidRemetente;
     }
 
-    public int getCdUsuarioDestinatario() {
-        return cdUsuarioDestinatario;
+    public String getUidDestinatario() {
+        return uidDestinatario;
     }
 
-    public void setCdUsuarioDestinatario(int cdUsuarioDestinatario) {
-        this.cdUsuarioDestinatario = cdUsuarioDestinatario;
+    public void setUidDestinatario(String uidDestinatario) {
+        this.uidDestinatario = uidDestinatario;
     }
 
-    public int getCdUsuarioLivro() {
-        return cdUsuarioLivro;
+    public String getUidAnuncio() {
+        return uidAnuncio;
     }
 
-    public void setCdUsuarioLivro(int cdUsuarioLivro) {
-        this.cdUsuarioLivro = cdUsuarioLivro;
+    public void setUidAnuncio(String uidAnuncio) {
+        this.uidAnuncio = uidAnuncio;
     }
 
     public String getConteudo() {

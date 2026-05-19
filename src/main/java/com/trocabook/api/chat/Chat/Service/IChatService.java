@@ -9,11 +9,11 @@ import java.util.List;
 public interface IChatService {
     MensagemDTO enviarMensagem(MensagemDTO mensagemDTO);
 
-    List<MensagemDTO> listarMensagensEntreUsuarios(int cdUsuarioLivro, int cdUsuarioDestinatario, int cdUsuarioRemetente);
+    List<MensagemDTO> listarMensagensEntreUsuarios(String uidAnuncio, String uidRemetente, String uidDestinatario);
 
-    List<MensagemDTO> listarMensagensPorUsuario(int cdUsuario);
+    List<MensagemDTO> listarMensagensPorUsuario(String uidRemetente);
 
-    List<MensagemDTO> listarMensagensPorUsuarioDataEnvioDecrescente(int cdUsuarioRemtente);
+    List<MensagemDTO> listarMensagensPorUsuarioDataEnvioDecrescente(String uidRemetente);
 
     Mensagem alterarMensagem(String id, String conteudo);
 

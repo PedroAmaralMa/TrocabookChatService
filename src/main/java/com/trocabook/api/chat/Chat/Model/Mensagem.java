@@ -11,9 +11,9 @@ public class Mensagem {
     @Id
     private ObjectId id;
 
-    private int cdUsuarioRemetente;
-    private int cdUsuarioDestinatario;
-    private int cdUsuarioLivro;
+    private String uidRemetente;
+    private String uidDestinatario;
+    private String uidAnuncio;
     private String conteudo;
     private LocalDateTime dataEnvio;
 
@@ -25,20 +25,28 @@ public class Mensagem {
         this.id = id;
     }
 
-    public int getCdUsuarioRemetente() {
-        return cdUsuarioRemetente;
+    public String getUidRemetente() {
+        return uidRemetente;
     }
 
-    public void setCdUsuarioRemetente(int cdUsuarioRemetente) {
-        this.cdUsuarioRemetente = cdUsuarioRemetente;
+    public void setUidRemetente(String uidRemetente) {
+        this.uidRemetente = uidRemetente;
     }
 
-    public int getCdUsuarioDestinatario() {
-        return cdUsuarioDestinatario;
+    public String getUidDestinatario() {
+        return uidDestinatario;
     }
 
-    public void setCdUsuarioDestinatario(int cdUsuarioDestinatario) {
-        this.cdUsuarioDestinatario = cdUsuarioDestinatario;
+    public void setUidDestinatario(String uidDestinatario) {
+        this.uidDestinatario = uidDestinatario;
+    }
+
+    public String getUidAnuncio() {
+        return uidAnuncio;
+    }
+
+    public void setUidAnuncio(String uidAnuncio) {
+        this.uidAnuncio = uidAnuncio;
     }
 
     public String getConteudo() {
@@ -57,11 +65,4 @@ public class Mensagem {
         this.dataEnvio = dataEnvio;
     }
 
-    public int getCdUsuarioLivro() {
-        return cdUsuarioLivro;
-    }
-
-    public void setCdUsuarioLivro(int cdUsuarioLivro) {
-        this.cdUsuarioLivro = cdUsuarioLivro;
-    }
 }

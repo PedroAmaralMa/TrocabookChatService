@@ -4,23 +4,22 @@ import com.trocabook.api.chat.Chat.Model.Mensagem;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
 public interface MensagemRepository extends MongoRepository<Mensagem, ObjectId> {
-    @Query("{ 'cdUsuarioLivro': ?0, $or: [ " +
-            "{'cdUsuarioRemetente': ?1, 'cdUsuarioDestinatario': ?2}, " +
-            "{'cdUsuarioRemetente': ?2, 'cdUsuarioDestinatario': ?1} " +
+    @Query("{ 'uidAnuncio': ?0, $or: [ " +
+            "{'uidRemetente': ?1, 'uidDestinatario': ?2}, " +
+            "{'uidRemetente': ?2, 'uidDestinatario': ?1} " +
             "] }")
-    List<Mensagem> findMensagensEntreUsuarios(int cdUsuarioLivro, int remetente, int destinatario);
+    List<Mensagem> findMensagensEntreUsuarios(String uidAnuncio, String uidRemetente, String uidDestinatario);
 
 
 
 
-    List<Mensagem> findByCdUsuarioRemetente(int cdUsuarioRemetente);
+    List<Mensagem> findByUidRemetente(String uidRemetente);
 
-    List<Mensagem> findByCdUsuarioRemetenteOrCdUsuarioDestinatarioOrderByDataEnvioDesc(int cdUsuarioRemetente, int cdUsuarioDestinatario);
+    List<Mensagem> findByUidRemetenteOrUidDestinatarioOrderByDataEnvioDesc(String uidRemetente, String uidDestinatario);
 
 
 }

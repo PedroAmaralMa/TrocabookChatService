@@ -30,36 +30,37 @@ public class ChatService implements IChatService{
 
     public MensagemDTO enviarMensagem(MensagemDTO mensagemDTO){
         Mensagem mensagem = new Mensagem();
-        mensagem.setCdUsuarioDestinatario(mensagemDTO.getCdUsuarioDestinatario());
+        mensagem.setUidDestinatario(mensagemDTO.getUidDestinatario());
         mensagem.setConteudo(mensagemDTO.getConteudo());
-        mensagem.setCdUsuarioRemetente(mensagemDTO.getCdUsuarioRemetente());
-        mensagem.setCdUsuarioLivro(mensagemDTO.getCdUsuarioLivro());
+        mensagem.setUidRemetente(mensagemDTO.getUidRemetente());
+        mensagem.setUidAnuncio(mensagemDTO.getUidAnuncio());
         mensagem.setDataEnvio(LocalDateTime.now());
         mensagemRepository.save(mensagem);
         mensagemDTO.setId(mensagem.getId().toHexString());
+        mensagemDTO.setDataEnvio(mensagem.getDataEnvio());
         return mensagemDTO;
 
 
 
     }
 
-    public List<MensagemDTO> listarMensagensEntreUsuarios(int cdUsuarioLivro, int cdUsuarioRemetente, int cdUsuarioDestinatario) {
+    public List<MensagemDTO> listarMensagensEntreUsuarios(String uidAnuncio, String uidRemetente, String uidDestinatario) {
         return transformarListaMensagemEmListaMensagemDTO(
-                mensagemRepository.findMensagensEntreUsuarios(cdUsuarioLivro, cdUsuarioRemetente, cdUsuarioDestinatario)
+                mensagemRepository.findMensagensEntreUsuarios(uidAnuncio, uidRemetente, uidDestinatario)
         );
     }
 
 
-    public List<MensagemDTO> listarMensagensPorUsuario(int cdUsuarioRemetente){
-        return transformarListaMensagemEmListaMensagemDTO(mensagemRepository.findByCdUsuarioRemetente(cdUsuarioRemetente));
+    public List<MensagemDTO> listarMensagensPorUsuario(String uidRemetente){
+        return transformarListaMensagemEmListaMensagemDTO(mensagemRepository.findByUidRemetente(uidRemetente));
 
     }
 
-    public List<MensagemDTO> listarMensagensPorUsuarioDataEnvioDecrescente(int cdUsuarioRemetente){
+    public List<MensagemDTO> listarMensagensPorUsuarioDataEnvioDecrescente(String uidRemetente){
 
         List<Mensagem> todasMensagens =
-                mensagemRepository.findByCdUsuarioRemetenteOrCdUsuarioDestinatarioOrderByDataEnvioDesc(
-                        cdUsuarioRemetente, cdUsuarioRemetente
+                mensagemRepository.findByUidRemetenteOrUidDestinatarioOrderByDataEnvioDesc(
+                        uidRemetente, uidRemetente
                 );
 
 
@@ -68,12 +69,12 @@ public class ChatService implements IChatService{
 
         for (Mensagem m : todasMensagens) {
 
-            int outroUsuario = (m.getCdUsuarioRemetente() == cdUsuarioRemetente)
-                    ? m.getCdUsuarioDestinatario()
-                    : m.getCdUsuarioRemetente();
+            String outroUsuario = (m.getUidRemetente().equals(uidRemetente))
+                    ? m.getUidDestinatario()
+                    : m.getUidRemetente();
 
 
-            String chave = outroUsuario + "-" + m.getCdUsuarioLivro();
+            String chave = outroUsuario + "-" + m.getUidAnuncio();
 
 
             ultimaMensagemPorConversa.putIfAbsent(chave, m);

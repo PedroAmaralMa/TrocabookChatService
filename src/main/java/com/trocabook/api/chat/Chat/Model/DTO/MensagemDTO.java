@@ -2,18 +2,30 @@ package com.trocabook.api.chat.Chat.Model.DTO;
 
 import com.trocabook.api.chat.Chat.Model.Mensagem;
 
+import java.time.LocalDateTime;
+
 public class MensagemDTO {
     private String id;
-    private int cdUsuarioRemetente;
-    private int cdUsuarioDestinatario;
-    private int cdUsuarioLivro;
+    private String uidRemetente;
+    private String uidDestinatario;
+    private String uidAnuncio;
     private String conteudo;
+    private LocalDateTime dataEnvio;
     public MensagemDTO(Mensagem m) {
         this.id = m.getId().toHexString();
-        this.cdUsuarioRemetente = m.getCdUsuarioRemetente();
-        this.cdUsuarioDestinatario = m.getCdUsuarioDestinatario();
-        this.cdUsuarioLivro = m.getCdUsuarioLivro();
+        this.uidRemetente = m.getUidRemetente();
+        this.uidDestinatario = m.getUidDestinatario();
+        this.uidAnuncio = m.getUidAnuncio();
         this.conteudo = m.getConteudo();
+        this.dataEnvio = m.getDataEnvio();
+    }
+
+    public LocalDateTime getDataEnvio() {
+        return dataEnvio;
+    }
+
+    public void setDataEnvio(LocalDateTime dataEnvio) {
+        this.dataEnvio = dataEnvio;
     }
 
     public MensagemDTO() {}
@@ -26,20 +38,28 @@ public class MensagemDTO {
         this.id = id;
     }
 
-    public int getCdUsuarioRemetente() {
-        return cdUsuarioRemetente;
+    public String getUidRemetente() {
+        return uidRemetente;
     }
 
-    public void setCdUsuarioRemetente(int cdUsuarioRemente) {
-        this.cdUsuarioRemetente = cdUsuarioRemente;
+    public void setUidRemetente(String uidRemetente) {
+        this.uidRemetente = uidRemetente;
     }
 
-    public int getCdUsuarioDestinatario() {
-        return cdUsuarioDestinatario;
+    public String getUidDestinatario() {
+        return uidDestinatario;
     }
 
-    public void setCdUsuarioDestinatario(int cdUsuarioDestinatario) {
-        this.cdUsuarioDestinatario = cdUsuarioDestinatario;
+    public void setUidDestinatario(String uidDestinatario) {
+        this.uidDestinatario = uidDestinatario;
+    }
+
+    public String getUidAnuncio() {
+        return uidAnuncio;
+    }
+
+    public void setUidAnuncio(String uidAnuncio) {
+        this.uidAnuncio = uidAnuncio;
     }
 
     public String getConteudo() {
@@ -50,11 +70,4 @@ public class MensagemDTO {
         this.conteudo = conteudo;
     }
 
-    public int getCdUsuarioLivro() {
-        return cdUsuarioLivro;
-    }
-
-    public void setCdUsuarioLivro(int cdUsuarioLivro) {
-        this.cdUsuarioLivro = cdUsuarioLivro;
-    }
 }

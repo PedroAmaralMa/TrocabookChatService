@@ -1,5 +1,6 @@
 package com.trocabook.api.chat.Chat.Controller;
 
+import com.trocabook.api.chat.Chat.Model.DTO.AtualizarMensagemDTO;
 import com.trocabook.api.chat.Chat.Model.DTO.MensagemDTO;
 import com.trocabook.api.chat.Chat.Model.Mensagem;
 import com.trocabook.api.chat.Chat.Response.ApiResponse;
@@ -40,17 +41,17 @@ public class ChatController {
 
     @GetMapping("/mensagens")
     public ResponseEntity<ApiResponse<List<MensagemDTO>>> listarMensagens(
-            @RequestParam(name = "remetente") int cdRemetente,
-            @RequestParam(name = "destinatario", required = false) Integer cdDestinatario,
-            @RequestParam(name = "usuarioLivro", required = false) Integer cdUsuarioLivro) {
+            @RequestParam(name = "remetente") String uidRemetente,
+            @RequestParam(name = "destinatario", required = false) String uidDestinatario,
+            @RequestParam(name = "anuncio", required = false) String uidAnuncio) {
 
         try {
             List<MensagemDTO> mensagens;
 
-            if (cdDestinatario == null) {
-                mensagens = chatService.listarMensagensPorUsuarioDataEnvioDecrescente(cdRemetente);
+            if (uidDestinatario == null) {
+                mensagens = chatService.listarMensagensPorUsuarioDataEnvioDecrescente(uidRemetente);
             } else {
-                mensagens = chatService.listarMensagensEntreUsuarios(cdUsuarioLivro, cdRemetente, cdDestinatario);
+                mensagens = chatService.listarMensagensEntreUsuarios(uidAnuncio, uidRemetente, uidDestinatario);
             }
 
             ApiResponse<List<MensagemDTO>> response = new ApiResponse<>(mensagens, "Mensagens Carregadas");
@@ -63,21 +64,31 @@ public class ChatController {
     }
 
     @PutMapping("/mensagens/{id}")
-    public ResponseEntity<ApiResponse<MensagemDTO>> atualizarMensagem(@PathVariable String id, @RequestBody String conteudo){
+    public ResponseEntity<ApiResponse<MensagemDTO>> atualizarMensagem(
+            @PathVariable String id,
+            @RequestBody AtualizarMensagemDTO dto) {
+
         try {
-            Mensagem mensagem = chatService.alterarMensagem(id, conteudo);
-            if (mensagem != null){
+            Mensagem mensagem = chatService.alterarMensagem(id, dto.getConteudo());
+
+            if (mensagem != null) {
                 MensagemDTO mensagemDTO = new MensagemDTO(mensagem);
-                ApiResponse<MensagemDTO> response = new ApiResponse<>(mensagemDTO, "Mensagem alterada com sucesso");
+
+                ApiResponse<MensagemDTO> response =
+                        new ApiResponse<>(mensagemDTO, "Mensagem alterada com sucesso");
+
                 return ResponseEntity.status(HttpStatus.OK).body(response);
             }
-            ApiResponse<MensagemDTO> response = new ApiResponse<>("Mensagem não encontrada");
+
+            ApiResponse<MensagemDTO> response =
+                    new ApiResponse<>("Mensagem não encontrada");
+
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-        } catch (IllegalStateException e){
-            ApiResponse<MensagemDTO> response = new ApiResponse<>(e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        } catch (Exception e){
-            ApiResponse<MensagemDTO> response = new ApiResponse<>(e.getMessage());
+
+        } catch (Exception e) {
+            ApiResponse<MensagemDTO> response =
+                    new ApiResponse<>(e.getMessage());
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
