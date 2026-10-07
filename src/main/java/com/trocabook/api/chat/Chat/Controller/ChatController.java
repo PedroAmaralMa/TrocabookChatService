@@ -17,7 +17,7 @@ import java.util.List;
 @RequestMapping("/api/chat")
 public class ChatController {
 
-    final IChatService chatService;
+    private final IChatService chatService;
 
     @Autowired
     public ChatController(IChatService chatService) {
@@ -35,6 +35,26 @@ public class ChatController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         } catch (Exception e){
             ApiResponse<MensagemDTO> response = new ApiResponse<>("Erro ao enviar Mensagem");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @GetMapping("/mensagens/{id}")
+    public ResponseEntity<ApiResponse<MensagemDTO>> buscarPorId(@PathVariable String id){
+        try {
+            MensagemDTO mensagem = chatService.buscarPorId(id);
+
+            if (mensagem != null){
+                ApiResponse<MensagemDTO> response = new ApiResponse<>(mensagem, "Mensagem encontrada com sucesso");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            }
+
+            ApiResponse<MensagemDTO> response =
+                    new ApiResponse<>("Mensagem não encontrada");
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception e){
+            ApiResponse<MensagemDTO> response = new ApiResponse<>(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
@@ -69,13 +89,12 @@ public class ChatController {
             @RequestBody AtualizarMensagemDTO dto) {
 
         try {
-            Mensagem mensagem = chatService.alterarMensagem(id, dto.getConteudo());
+            MensagemDTO mensagem = chatService.alterarMensagem(id, dto.getConteudo());
 
             if (mensagem != null) {
-                MensagemDTO mensagemDTO = new MensagemDTO(mensagem);
 
                 ApiResponse<MensagemDTO> response =
-                        new ApiResponse<>(mensagemDTO, "Mensagem alterada com sucesso");
+                        new ApiResponse<>(mensagem, "Mensagem alterada com sucesso");
 
                 return ResponseEntity.status(HttpStatus.OK).body(response);
             }

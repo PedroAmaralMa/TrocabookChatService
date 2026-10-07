@@ -7,6 +7,9 @@ import com.trocabook.api.chat.Chat.Model.Mensagem;
 import java.util.List;
 
 public interface IChatService {
+
+    MensagemDTO buscarPorId(String id);
+
     MensagemDTO enviarMensagem(MensagemDTO mensagemDTO);
 
     List<MensagemDTO> listarMensagensEntreUsuarios(String uidAnuncio, String uidRemetente, String uidDestinatario);
@@ -15,7 +18,7 @@ public interface IChatService {
 
     List<MensagemDTO> listarMensagensPorUsuarioDataEnvioDecrescente(String uidRemetente);
 
-    Mensagem alterarMensagem(String id, String conteudo);
+    MensagemDTO alterarMensagem(String id, String conteudo);
 
     boolean removerMensagem(String id);
 }

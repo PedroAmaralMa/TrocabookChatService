@@ -18,9 +18,9 @@ import java.util.Map;
 @Service
 public class ChatService implements IChatService{
 
-    final MensagemRepository mensagemRepository;
+    private final MensagemRepository mensagemRepository;
 
-    final MensagemBackupRepository mensagemBackupRepository;
+    private final MensagemBackupRepository mensagemBackupRepository;
     @Autowired
     public ChatService(MensagemRepository mensagemRepository, MensagemBackupRepository mensagemBackupRepository) {
         this.mensagemRepository = mensagemRepository;
@@ -28,6 +28,18 @@ public class ChatService implements IChatService{
 
     }
 
+    @Override
+    public MensagemDTO buscarPorId(String id) {
+        Mensagem mensagem = mensagemRepository.findById(new ObjectId(id)).orElse(null);
+
+        if (mensagem == null){
+            return null;
+        }
+
+        return new MensagemDTO(mensagem);
+    }
+
+    @Override
     public MensagemDTO enviarMensagem(MensagemDTO mensagemDTO){
         Mensagem mensagem = new Mensagem();
         mensagem.setUidDestinatario(mensagemDTO.getUidDestinatario());
@@ -44,6 +56,7 @@ public class ChatService implements IChatService{
 
     }
 
+    @Override
     public List<MensagemDTO> listarMensagensEntreUsuarios(String uidAnuncio, String uidRemetente, String uidDestinatario) {
         return transformarListaMensagemEmListaMensagemDTO(
                 mensagemRepository.findMensagensEntreUsuarios(uidAnuncio, uidRemetente, uidDestinatario)
@@ -51,11 +64,13 @@ public class ChatService implements IChatService{
     }
 
 
+    @Override
     public List<MensagemDTO> listarMensagensPorUsuario(String uidRemetente){
         return transformarListaMensagemEmListaMensagemDTO(mensagemRepository.findByUidRemetente(uidRemetente));
 
     }
 
+    @Override
     public List<MensagemDTO> listarMensagensPorUsuarioDataEnvioDecrescente(String uidRemetente){
 
         List<Mensagem> todasMensagens =
@@ -88,6 +103,7 @@ public class ChatService implements IChatService{
                 .toList();
     }
 
+    @Override
     public boolean removerMensagem(String id) {
         ObjectId idObjeto = new ObjectId(id);
         Mensagem mensagem = mensagemRepository.findById(idObjeto).orElse(null);
@@ -100,7 +116,8 @@ public class ChatService implements IChatService{
         return true;
     }
 
-    public Mensagem alterarMensagem(String id, String conteudo) {
+    @Override
+    public MensagemDTO alterarMensagem(String id, String conteudo) {
         ObjectId idObjeto = new ObjectId(id);
         Mensagem mensagem = mensagemRepository.findById(idObjeto).orElse(null);
         if (mensagem == null){
@@ -109,7 +126,7 @@ public class ChatService implements IChatService{
         MensagemBackup mensagemBackup = new MensagemBackup(mensagem, MensagemBackup.TipoBackup.ALTERACAO);
         mensagemBackupRepository.save(mensagemBackup);
         mensagem.setConteudo(conteudo);
-        return mensagemRepository.save(mensagem);
+        return new MensagemDTO(mensagemRepository.save(mensagem));
     }
 
 
