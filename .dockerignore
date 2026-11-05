@@ -1,4 +1,18 @@
-target
-.idea
-.git
-.mvn/wrapper/maven-wrapper.jar
+# Artefatos locais e Contexto do Git (Reduz o tamanho da imagem)
+target/
+.git/
+.gitignore
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Credenciais e Segredos (NUNCA empacotar na imagem)
+.env
+**/trocabook-92297-firebase-adminsdk-fbsvc-d737f4aa9e.json
+src/main/resources/credentials/
+
+# Logs e arquivos do SO
+*.log
+.DS_Store

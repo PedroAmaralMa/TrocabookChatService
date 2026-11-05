@@ -1,34 +1,21 @@
-HELP.md
+# Target e Builds
 target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
-.env
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
+# IDEs e Editores
+.idea/
 *.iws
 *.iml
 *.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
 .vscode/
+.classpath
+.project
+.settings/
+
+# Credenciais e Segredos (Navegam fora do Git)
+.env
+**/trocabook-92297-firebase-adminsdk-fbsvc-d737f4aa9e.json
+src/main/resources/credentials/
+
+# Logs e arquivos do SO
+*.log
+.DS_Store
