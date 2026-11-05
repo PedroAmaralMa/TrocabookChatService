@@ -12,9 +12,12 @@ public class ChatApplication {
 
     private static final Logger log = LoggerFactory.getLogger(ChatApplication.class);
 
+    static {
+        carregarTodasVariaveis();
+    }
+
     public static void main(String[] args) {
         log.info("Iniciando TrocabookChatService (ChatApplication)...");
-        carregarTodasVariaveis();
         SpringApplication.run(ChatApplication.class, args);
         log.info("TrocabookChatService iniciado com sucesso!");
     }
