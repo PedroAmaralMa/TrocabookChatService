@@ -178,18 +178,27 @@ public class ChatController {
     }
 
     private void notificarEventoWebSocket(MensagemDTO mensagem, EventoChatDTO.TipoEvento tipo, String idExcluido) {
+        // 1. Mantém a ordenação alfabética segura de u1 e u2
         String u1 = mensagem.getUidRemetente().compareTo(mensagem.getUidDestinatario()) < 0
                 ? mensagem.getUidRemetente() : mensagem.getUidDestinatario();
         String u2 = mensagem.getUidRemetente().compareTo(mensagem.getUidDestinatario()) < 0
                 ? mensagem.getUidDestinatario() : mensagem.getUidRemetente();
 
-        String destinoTopico = "/topic/conversa." + mensagem.getUidAnuncio() + "." + u1 + "." + u2;
-
+        // 2. Monta o evento que vai transitar no RabbitMQ
         EventoChatDTO evento = (tipo == EventoChatDTO.TipoEvento.MENSAGEM_EXCLUIDA)
                 ? new EventoChatDTO(tipo, idExcluido)
                 : new EventoChatDTO(tipo, mensagem);
 
-        log.info("Publicando evento WebSocket '{}' no tópico '{}'", tipo, destinoTopico);
-        messagingTemplate.convertAndSend(destinoTopico, evento);
+        if (tipo == EventoChatDTO.TipoEvento.MENSAGEM_EXCLUIDA) {
+            evento.setMensagem(mensagem); // Garante que o listener sabe qual é a conversa/anúncio
+        }
+
+        // 3. Monta uma routing key dinâmica baseada no padrão de entrega (casando com "chat.delivery.#")
+        // Exemplo: chat.delivery.edit.<anuncio>.<u1>.<u2> ou chat.delivery.delete.<anuncio>.<u1>.<u2>
+        String acao = (tipo == EventoChatDTO.TipoEvento.MENSAGEM_EXCLUIDA) ? "delete" : "edit";
+        String routingKey = "chat.delivery." + acao + "." + mensagem.getUidAnuncio() + "." + u1 + "." + u2;
+
+        log.info("Publicando evento WebSocket '{}' no RabbitMQ com routingKey '{}'", tipo, routingKey);
+        rabbitTemplate.convertAndSend(RabbitMQConfig.CHAT_EXCHANGE, routingKey, evento);
     }
 }

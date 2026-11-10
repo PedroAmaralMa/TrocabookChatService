@@ -57,22 +57,39 @@ public class ChatQueueListener {
     }
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_DELIVERY)
-    public void escutarParaEntregaEmTempoReal(MensagemDTO mensagemDTO) {
-        log.info("Mensagem consumida da fila '{}' para entrega via WebSocket. Remetente: '{}', Destinatário: '{}'",
-                RabbitMQConfig.QUEUE_DELIVERY, mensagemDTO.getUidRemetente(), mensagemDTO.getUidDestinatario());
+    public void escutarParaEntregaEmTempoReal(Object payload) {
+        log.info("Mensagem/Evento consumido da fila '{}' para entrega via WebSocket.", RabbitMQConfig.QUEUE_DELIVERY);
         try {
-            String u1 = mensagemDTO.getUidRemetente().compareTo(mensagemDTO.getUidDestinatario()) < 0
-                    ? mensagemDTO.getUidRemetente() : mensagemDTO.getUidDestinatario();
-            String u2 = mensagemDTO.getUidRemetente().compareTo(mensagemDTO.getUidDestinatario()) < 0
-                    ? mensagemDTO.getUidDestinatario() : mensagemDTO.getUidRemetente();
+            if (payload instanceof MensagemDTO mensagemDTO) {
+                // Fluxo original para Nova Mensagem
+                String u1 = mensagemDTO.getUidRemetente().compareTo(mensagemDTO.getUidDestinatario()) < 0
+                        ? mensagemDTO.getUidRemetente() : mensagemDTO.getUidDestinatario();
+                String u2 = mensagemDTO.getUidRemetente().compareTo(mensagemDTO.getUidDestinatario()) < 0
+                        ? mensagemDTO.getUidDestinatario() : mensagemDTO.getUidRemetente();
 
-            String destinoTopico = "/topic/conversa." + mensagemDTO.getUidAnuncio() + "." + u1 + "." + u2;
+                String destinoTopico = "/topic/conversa." + mensagemDTO.getUidAnuncio() + "." + u1 + "." + u2;
 
-            EventoChatDTO evento = new EventoChatDTO(EventoChatDTO.TipoEvento.NOVA_MENSAGEM, mensagemDTO);
-            messagingTemplate.convertAndSend(destinoTopico, evento);
-            log.info("Mensagem entregue via WebSocket com sucesso no tópico: '{}'", destinoTopico);
+                EventoChatDTO evento = new EventoChatDTO(EventoChatDTO.TipoEvento.NOVA_MENSAGEM, mensagemDTO);
+                messagingTemplate.convertAndSend(destinoTopico, evento);
+                log.info("Nova mensagem entregue via WebSocket no tópico: '{}'", destinoTopico);
+
+            } else if (payload instanceof EventoChatDTO eventoDTO) {
+                // Novo fluxo para Edição ou Exclusão sincronizadas via RabbitMQ
+                MensagemDTO mensagem = eventoDTO.getMensagem();
+                if (mensagem == null) return;
+
+                String u1 = mensagem.getUidRemetente().compareTo(mensagem.getUidDestinatario()) < 0
+                        ? mensagem.getUidRemetente() : mensagem.getUidDestinatario();
+                String u2 = mensagem.getUidRemetente().compareTo(mensagem.getUidDestinatario()) < 0
+                        ? mensagem.getUidDestinatario() : mensagem.getUidRemetente();
+
+                String destinoTopico = "/topic/conversa." + mensagem.getUidAnuncio() + "." + u1 + "." + u2;
+
+                messagingTemplate.convertAndSend(destinoTopico, eventoDTO);
+                log.info("Evento '{}' entregue via WebSocket no tópico: '{}'", eventoDTO.getTipo(), destinoTopico);
+            }
         } catch (Exception e) {
-            log.error("Erro ao entregar mensagem via WebSocket na fila '{}': {}", RabbitMQConfig.QUEUE_DELIVERY, e.getMessage(), e);
+            log.error("Erro ao entregar evento via WebSocket na fila '{}': {}", RabbitMQConfig.QUEUE_DELIVERY, e.getMessage(), e);
             throw e;
         }
     }
