@@ -44,12 +44,21 @@ public class ChatQueueListener {
             log.info("Mensagem persistida com sucesso a partir da fila '{}'. ID gerado: '{}'",
                     RabbitMQConfig.QUEUE_STORAGE, mensagemSalva.getId());
 
+            // Ordenação alfabética segura de u1 e u2 (mesmo padrão do resto da aplicação)
+            String u1 = mensagemSalva.getUidRemetente().compareTo(mensagemSalva.getUidDestinatario()) < 0
+                    ? mensagemSalva.getUidRemetente() : mensagemSalva.getUidDestinatario();
+            String u2 = mensagemSalva.getUidRemetente().compareTo(mensagemSalva.getUidDestinatario()) < 0
+                    ? mensagemSalva.getUidDestinatario() : mensagemSalva.getUidRemetente();
+
+
+            String routingKeyDelivery = "chat.delivery.mensagem." + mensagemSalva.getUidAnuncio() + "." + u1 + "." + u2;
 
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.CHAT_EXCHANGE,
-                    "chat.delivery.websocket",
+                    routingKeyDelivery,
                     mensagemSalva
             );
+            log.info("Mensagem salva despachada para entrega via RabbitMQ com routingKey: '{}'", routingKeyDelivery);
         } catch (Exception e) {
             log.error("Erro ao persistir mensagem da fila '{}': {}", RabbitMQConfig.QUEUE_STORAGE, e.getMessage(), e);
             throw e;
