@@ -68,7 +68,7 @@ public class ChatQueueListener {
         log.info("Mensagem/Evento consumido da fila '{}' para entrega via WebSocket.", RabbitMQConfig.QUEUE_DELIVERY);
         try {
             if (payload instanceof MensagemDTO mensagemDTO) {
-                // Fluxo original para Nova Mensagem
+
                 String u1 = mensagemDTO.getUidRemetente().compareTo(mensagemDTO.getUidDestinatario()) < 0
                         ? mensagemDTO.getUidRemetente() : mensagemDTO.getUidDestinatario();
                 String u2 = mensagemDTO.getUidRemetente().compareTo(mensagemDTO.getUidDestinatario()) < 0
