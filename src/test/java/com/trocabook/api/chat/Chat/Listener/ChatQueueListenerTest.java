@@ -62,6 +62,8 @@ class ChatQueueListenerTest {
         mensagemSalva.setConteudo("Olá, livro disponível?");
         mensagemSalva.setDataEnvio(LocalDateTime.now());
 
+        String routingKeyEsperada = "chat.delivery.mensagem.anuncio123.user1.user2";
+
         when(chatService.enviarMensagem(mensagemEntrada)).thenReturn(mensagemSalva);
         doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Object.class));
 
@@ -72,7 +74,7 @@ class ChatQueueListenerTest {
         verify(chatService, times(1)).enviarMensagem(mensagemEntrada);
         verify(rabbitTemplate, times(1)).convertAndSend(
                 eq(RabbitMQConfig.CHAT_EXCHANGE),
-                eq("chat.delivery.websocket"),
+                eq(routingKeyEsperada),
                 eq(mensagemSalva)
         );
     }
@@ -115,10 +117,13 @@ class ChatQueueListenerTest {
 
         MensagemDTO mensagemSalva = new MensagemDTO();
         mensagemSalva.setId("64a5f2e1bcf123456789abcd");
+        mensagemSalva.setUidRemetente("user1");
+        mensagemSalva.setUidDestinatario("user2");
+        mensagemSalva.setUidAnuncio("anuncio123");
 
         when(chatService.enviarMensagem(mensagemEntrada)).thenReturn(mensagemSalva);
         doThrow(new RuntimeException("Erro ao enviar mensagem para RabbitMQ"))
-                .when(rabbitTemplate).convertAndSend(eq(RabbitMQConfig.CHAT_EXCHANGE), eq("chat.delivery.websocket"), eq(mensagemSalva));
+                .when(rabbitTemplate).convertAndSend(eq(RabbitMQConfig.CHAT_EXCHANGE), anyString(), eq(mensagemSalva));
 
         try {
             // QUANDO o listener consome a mensagem e tenta encaminhar
@@ -131,11 +136,11 @@ class ChatQueueListenerTest {
         }
 
         verify(chatService, times(1)).enviarMensagem(mensagemEntrada);
-        verify(rabbitTemplate, times(1)).convertAndSend(eq(RabbitMQConfig.CHAT_EXCHANGE), eq("chat.delivery.websocket"), eq(mensagemSalva));
+        verify(rabbitTemplate, times(1)).convertAndSend(eq(RabbitMQConfig.CHAT_EXCHANGE), anyString(), eq(mensagemSalva));
     }
 
     @Test
-    @DisplayName("CT04 - Quando escutar fila de entrega em tempo real (remetente < destinatário), deve montar tópico ordenado e enviar via WebSocket")
+    @DisplayName("CT04 - Quando escutar fila de entrega em tempo real (remetente < destinatário com MensagemDTO), deve montar tópico ordenado e enviar via WebSocket")
     void quandoEscutarParaEntregaEmTempoRealComRemetenteMenorQueDestinatario_entaoEnviaParaWebSocketComTopicoOrdenado() {
         // DADO que uma mensagem é consumida com remetente lexicograficamente menor que o destinatário
         MensagemDTO mensagemEntrada = new MensagemDTO();
@@ -162,7 +167,7 @@ class ChatQueueListenerTest {
     }
 
     @Test
-    @DisplayName("CT05 - Quando escutar fila de entrega em tempo real (remetente > destinatário), deve inverter ordem dos usuários no tópico WebSocket")
+    @DisplayName("CT05 - Quando escutar fila de entrega em tempo real (remetente > destinatário com MensagemDTO), deve inverter ordem dos usuários no tópico WebSocket")
     void quandoEscutarParaEntregaEmTempoRealComRemetenteMaiorQueDestinatario_entaoInverteOrdemNoTopicoWebSocket() {
         // DADO que uma mensagem é consumida com remetente lexicograficamente maior que o destinatário
         MensagemDTO mensagemEntrada = new MensagemDTO();
@@ -183,7 +188,29 @@ class ChatQueueListenerTest {
     }
 
     @Test
-    @DisplayName("CT06 - Quando ocorrer erro ao enviar via WebSocket na entrega em tempo real, deve capturar no catch e relançar exceção")
+    @DisplayName("CT06 - Quando escutar fila de entrega em tempo real com EventoChatDTO, deve despachar evento no tópico ordenado")
+    void quandoEscutarParaEntregaEmTempoRealComEventoChatDTO_entaoDespachaEventoNoTopicoOrdenado() {
+        // DADO que um EventoChatDTO de edição/exclusão é consumido da fila de entrega
+        MensagemDTO msg = new MensagemDTO();
+        msg.setId("msg789");
+        msg.setUidRemetente("userB");
+        msg.setUidDestinatario("userA");
+        msg.setUidAnuncio("anuncio88");
+
+        EventoChatDTO eventoDTO = new EventoChatDTO(EventoChatDTO.TipoEvento.MENSAGEM_EDITADA, msg);
+
+        String topicoEsperado = "/topic/conversa.anuncio88.userA.userB";
+        doNothing().when(messagingTemplate).convertAndSend(anyString(), any(Object.class));
+
+        // QUANDO o listener processa a entrega em tempo real
+        chatQueueListener.escutarParaEntregaEmTempoReal(eventoDTO);
+
+        // ENTÃO o evento WebSocket correspondente é entregue no tópico ordenado
+        verify(messagingTemplate, times(1)).convertAndSend(eq(topicoEsperado), eq(eventoDTO));
+    }
+
+    @Test
+    @DisplayName("CT07 - Quando ocorrer erro ao enviar via WebSocket na entrega em tempo real, deve capturar no catch e relançar exceção")
     void quandoEscutarParaEntregaEmTempoRealComErroNoWebSocket_entaoCapturaERelancaExcecao() {
         // DADO que ocorre um erro ao disparar a mensagem via SimpMessagingTemplate
         MensagemDTO mensagemEntrada = new MensagemDTO();
@@ -208,7 +235,7 @@ class ChatQueueListenerTest {
     }
 
     @Test
-    @DisplayName("CT07 - Quando escutar fila de notificações com dados válidos, deve acionar NotificacaoService com sucesso")
+    @DisplayName("CT08 - Quando escutar fila de notificações com dados válidos, deve acionar NotificacaoService com sucesso")
     void quandoEscutarParaNotificacoesComDadosValidos_entaoProcessaNotificacaoComSucesso() {
         // DADO uma mensagem consumida da fila de notificações (QUEUE_NOTIFICATIONS)
         MensagemDTO mensagemEntrada = new MensagemDTO();
@@ -227,7 +254,7 @@ class ChatQueueListenerTest {
     }
 
     @Test
-    @DisplayName("CT08 - Quando ocorrer erro ao processar notificação no NotificacaoService, deve capturar no catch e relançar exceção")
+    @DisplayName("CT09 - Quando ocorrer erro ao processar notificação no NotificacaoService, deve capturar no catch e relançar exceção")
     void quandoEscutarParaNotificacoesComErroNoServico_entaoCapturaERelancaExcecao() {
         // DADO que o NotificacaoService lança uma exceção durante o processamento
         MensagemDTO mensagemEntrada = new MensagemDTO();
@@ -251,4 +278,3 @@ class ChatQueueListenerTest {
         verify(notificacaoService, times(1)).processarNotificacao(mensagemEntrada);
     }
 }
-

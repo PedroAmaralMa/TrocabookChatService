@@ -1,10 +1,19 @@
 package com.trocabook.api.chat.Chat.Config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -21,54 +30,94 @@ public class RabbitMQConfig {
     public static final String ROUTING_KEY_MESSAGES = "chat.message.#";
     public static final String ROUTING_KEY_DELIVERY = "chat.delivery.#";
 
+    // --- Declaração de Topologia ---
+
     @Bean
     public TopicExchange chatExchange() {
-        log.info("Inicializando TopicExchange: '{}'", CHAT_EXCHANGE);
-        return new TopicExchange(CHAT_EXCHANGE);
+        return new TopicExchange(CHAT_EXCHANGE, true, false);
     }
 
     @Bean
     public Queue storageQueue() {
-        log.info("Inicializando Fila RabbitMQ para persistência: '{}'", QUEUE_STORAGE);
         return new Queue(QUEUE_STORAGE, true);
     }
 
     @Bean
     public Queue deliveryQueue() {
-        log.info("Inicializando Fila RabbitMQ para entrega em tempo real: '{}'", QUEUE_DELIVERY);
         return new Queue(QUEUE_DELIVERY, true);
     }
 
     @Bean
     public Queue notificationsQueue() {
-        log.info("Inicializando Fila RabbitMQ para notificações: '{}'", QUEUE_NOTIFICATIONS);
         return new Queue(QUEUE_NOTIFICATIONS, true);
     }
 
     @Bean
     public Binding bindingStorage(Queue storageQueue, TopicExchange chatExchange) {
-        log.info("Criando Binding entre fila '{}' e exchange '{}' com routingKey '{}'",
-                QUEUE_STORAGE, CHAT_EXCHANGE, ROUTING_KEY_MESSAGES);
         return BindingBuilder.bind(storageQueue).to(chatExchange).with(ROUTING_KEY_MESSAGES);
     }
 
     @Bean
     public Binding bindingDelivery(Queue deliveryQueue, TopicExchange chatExchange) {
-        log.info("Criando Binding entre fila '{}' e exchange '{}' com routingKey '{}'",
-                QUEUE_DELIVERY, CHAT_EXCHANGE, ROUTING_KEY_DELIVERY);
         return BindingBuilder.bind(deliveryQueue).to(chatExchange).with(ROUTING_KEY_DELIVERY);
     }
 
     @Bean
     public Binding bindingNotifications(Queue notificationsQueue, TopicExchange chatExchange) {
-        log.info("Criando Binding entre fila '{}' e exchange '{}' com routingKey '{}'",
-                QUEUE_NOTIFICATIONS, CHAT_EXCHANGE, ROUTING_KEY_MESSAGES);
         return BindingBuilder.bind(notificationsQueue).to(chatExchange).with(ROUTING_KEY_MESSAGES);
     }
 
+    // --- Gerenciador de Topologia (Cria filas/bindings no CloudAMQP) ---
+
     @Bean
-    public Jackson2JsonMessageConverter producerJackson2MessageConverter() {
-        log.info("Configurando Jackson2JsonMessageConverter para RabbitMQ");
-        return new Jackson2JsonMessageConverter();
+    public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
+        RabbitAdmin admin = new RabbitAdmin(connectionFactory);
+        admin.setAutoStartup(true);
+        return admin;
+    }
+
+    // --- Conversor JSON Robusto (com suporte a Java 8 Date/Time) ---
+
+    @Bean
+    public MessageConverter jsonMessageConverter() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(objectMapper);
+
+        DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
+        typeMapper.setTrustedPackages("com.trocabook.api.chat.*", "java.util.*");
+        converter.setJavaTypeMapper(typeMapper);
+
+        return converter;
+    }
+
+    // --- RabbitTemplate Configurado com o Conversor JSON ---
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, MessageConverter jsonMessageConverter) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(jsonMessageConverter);
+        // Habilita detecção de mensagens não entregues (Unroutable)
+        template.setMandatory(true);
+        template.setReturnsCallback(returned -> 
+            log.error("MENSAGEM NÃO ROTEADA! Exchange: {}, RoutingKey: {}, ReplyCode: {}, ReplyText: {}",
+                    returned.getExchange(), returned.getRoutingKey(), returned.getReplyCode(), returned.getReplyText())
+        );
+        return template;
+    }
+
+    // --- Fábrica do Container de Escuta (@RabbitListener) ---
+
+    @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+            ConnectionFactory connectionFactory,
+            MessageConverter jsonMessageConverter) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setMessageConverter(jsonMessageConverter);
+        factory.setDefaultRequeueRejected(false); // Evita loop infinito se a mensagem for inválida
+        return factory;
     }
 }
