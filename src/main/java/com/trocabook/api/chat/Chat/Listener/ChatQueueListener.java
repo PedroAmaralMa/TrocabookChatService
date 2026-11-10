@@ -1,5 +1,7 @@
 package com.trocabook.api.chat.Chat.Listener;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.trocabook.api.chat.Chat.Config.RabbitMQConfig;
 import com.trocabook.api.chat.Chat.Model.DTO.EventoChatDTO;
 import com.trocabook.api.chat.Chat.Model.DTO.MensagemDTO;
@@ -13,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 public class ChatQueueListener {
 
@@ -22,6 +26,7 @@ public class ChatQueueListener {
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificacaoService notificacaoService;
     private final RabbitTemplate rabbitTemplate;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     public ChatQueueListener(
@@ -33,6 +38,7 @@ public class ChatQueueListener {
         this.messagingTemplate = messagingTemplate;
         this.notificacaoService = notificacaoService;
         this.rabbitTemplate = rabbitTemplate;
+        this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_STORAGE)
@@ -67,6 +73,14 @@ public class ChatQueueListener {
     public void escutarParaEntregaEmTempoReal(Object payload) {
         log.info("Mensagem/Evento consumido da fila '{}' para entrega via WebSocket.", RabbitMQConfig.QUEUE_DELIVERY);
         try {
+            if (payload instanceof Map<?, ?> map) {
+                if (map.containsKey("tipo")) {
+                    payload = objectMapper.convertValue(map, EventoChatDTO.class);
+                } else {
+                    payload = objectMapper.convertValue(map, MensagemDTO.class);
+                }
+            }
+
             if (payload instanceof MensagemDTO mensagemDTO) {
 
                 String u1 = mensagemDTO.getUidRemetente().compareTo(mensagemDTO.getUidDestinatario()) < 0

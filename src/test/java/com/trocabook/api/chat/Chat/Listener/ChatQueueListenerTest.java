@@ -277,4 +277,25 @@ class ChatQueueListenerTest {
 
         verify(notificacaoService, times(1)).processarNotificacao(mensagemEntrada);
     }
+
+    @Test
+    @DisplayName("CT10 - Quando escutar fila de entrega em tempo real com Map (LinkedHashMap), deve converter para MensagemDTO e entregar")
+    void quandoEscutarParaEntregaEmTempoRealComMap_entaoConverteParaMensagemDTOEEntrega() {
+        // DADO que o RabbitListener entrega o payload como Map (comportamento padrão quando desserializa Object)
+        java.util.Map<String, Object> map = new java.util.HashMap<>();
+        map.put("id", "msgMap123");
+        map.put("uidRemetente", "userA");
+        map.put("uidDestinatario", "userB");
+        map.put("uidAnuncio", "anuncio99");
+        map.put("conteudo", "Olá via Map");
+
+        String topicoEsperado = "/topic/conversa.anuncio99.userA.userB";
+        doNothing().when(messagingTemplate).convertAndSend(anyString(), any(Object.class));
+
+        // QUANDO o listener consome o payload Map
+        chatQueueListener.escutarParaEntregaEmTempoReal(map);
+
+        // ENTÃO a mensagem deve ser convertida para MensagemDTO e despachada para o WebSocket
+        verify(messagingTemplate, times(1)).convertAndSend(eq(topicoEsperado), any(EventoChatDTO.class));
+    }
 }
