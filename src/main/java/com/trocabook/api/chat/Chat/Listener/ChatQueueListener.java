@@ -44,12 +44,10 @@ public class ChatQueueListener {
             log.info("Mensagem persistida com sucesso a partir da fila '{}'. ID gerado: '{}'",
                     RabbitMQConfig.QUEUE_STORAGE, mensagemSalva.getId());
 
-            // Ordenação alfabética segura de u1 e u2 (mesmo padrão do resto da aplicação)
             String u1 = mensagemSalva.getUidRemetente().compareTo(mensagemSalva.getUidDestinatario()) < 0
                     ? mensagemSalva.getUidRemetente() : mensagemSalva.getUidDestinatario();
             String u2 = mensagemSalva.getUidRemetente().compareTo(mensagemSalva.getUidDestinatario()) < 0
                     ? mensagemSalva.getUidDestinatario() : mensagemSalva.getUidRemetente();
-
 
             String routingKeyDelivery = "chat.delivery.mensagem." + mensagemSalva.getUidAnuncio() + "." + u1 + "." + u2;
 
