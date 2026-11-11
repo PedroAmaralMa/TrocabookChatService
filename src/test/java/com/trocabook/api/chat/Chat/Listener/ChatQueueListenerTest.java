@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.MessagingException;
@@ -18,6 +19,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -282,7 +284,7 @@ class ChatQueueListenerTest {
     @DisplayName("CT10 - Quando escutar fila de entrega em tempo real com Map (LinkedHashMap), deve converter para MensagemDTO e entregar")
     void quandoEscutarParaEntregaEmTempoRealComMap_entaoConverteParaMensagemDTOEEntrega() {
         // DADO que o RabbitListener entrega o payload como Map (comportamento padrão quando desserializa Object)
-        java.util.Map<String, Object> map = new java.util.HashMap<>();
+        java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
         map.put("id", "msgMap123");
         map.put("uidRemetente", "userA");
         map.put("uidDestinatario", "userB");
@@ -297,5 +299,61 @@ class ChatQueueListenerTest {
 
         // ENTÃO a mensagem deve ser convertida para MensagemDTO e despachada para o WebSocket
         verify(messagingTemplate, times(1)).convertAndSend(eq(topicoEsperado), any(EventoChatDTO.class));
+    }
+
+    @Test
+    @DisplayName("CT11 - Quando escutar fila de entrega com EventoChatDTO em LinkedHashMap, deve converter e despachar evento no tópico")
+    void quandoEscutarParaEntregaEmTempoRealComEventoEmLinkedHashMap_entaoConverteEDespachaNoTopico() {
+        // DADO que o conversor RabbitMQ entregou o envelope e a mensagem como LinkedHashMap
+        java.util.Map<String, Object> mensagemMap = new java.util.LinkedHashMap<>();
+        mensagemMap.put("id", "msgEventMap123");
+        mensagemMap.put("uidRemetente", "userZ");
+        mensagemMap.put("uidDestinatario", "userA");
+        mensagemMap.put("uidAnuncio", "anuncioEventMap");
+        mensagemMap.put("conteudo", "Mensagem recebida como evento");
+
+        java.util.Map<String, Object> eventoMap = new java.util.LinkedHashMap<>();
+        eventoMap.put("tipo", "MENSAGEM_EDITADA");
+        eventoMap.put("mensagem", mensagemMap);
+
+        String topicoEsperado = "/topic/conversa.anuncioEventMap.userA.userZ";
+
+        // QUANDO o listener consome o evento genérico
+        chatQueueListener.escutarParaEntregaEmTempoReal(eventoMap);
+
+        // ENTÃO mantém tipo e ID da mensagem ao publicar no destino ordenado
+        ArgumentCaptor<EventoChatDTO> captor = ArgumentCaptor.forClass(EventoChatDTO.class);
+        verify(messagingTemplate).convertAndSend(eq(topicoEsperado), captor.capture());
+        assertEquals(EventoChatDTO.TipoEvento.MENSAGEM_EDITADA, captor.getValue().getTipo());
+        assertNotNull(captor.getValue().getMensagem());
+        assertEquals("msgEventMap123", captor.getValue().getMensagem().getId());
+    }
+
+    @Test
+    @DisplayName("CT12 - Quando RabbitListener entregar Message AMQP, deve desserializar o body JSON e publicar no tópico")
+    void quandoEscutarParaEntregaEmTempoRealComMensagemAmqp_entaoDesserializaBodyEEntrega() {
+        // DADO que o método recebeu o envelope AMQP, cujo body contém o JSON da mensagem
+        String json = """
+                {
+                  "id": "msgAmqp123",
+                  "uidRemetente": "userA",
+                  "uidDestinatario": "userB",
+                  "uidAnuncio": "anuncioAmqp",
+                  "conteudo": "Mensagem no body AMQP",
+                  "dataEnvio": "2026-11-10T21:07:12.6612983"
+                }
+                """;
+        Message mensagemAmqp = new Message(json.getBytes(StandardCharsets.UTF_8));
+        String topicoEsperado = "/topic/conversa.anuncioAmqp.userA.userB";
+
+        // QUANDO o listener consome o envelope do RabbitMQ
+        chatQueueListener.escutarParaEntregaEmTempoReal(mensagemAmqp);
+
+        // ENTÃO desserializa os dados da conversa e publica o evento no tópico correto
+        ArgumentCaptor<EventoChatDTO> captor = ArgumentCaptor.forClass(EventoChatDTO.class);
+        verify(messagingTemplate).convertAndSend(eq(topicoEsperado), captor.capture());
+        assertEquals(EventoChatDTO.TipoEvento.NOVA_MENSAGEM, captor.getValue().getTipo());
+        assertEquals("msgAmqp123", captor.getValue().getMensagem().getId());
+        assertEquals("Mensagem no body AMQP", captor.getValue().getMensagem().getConteudo());
     }
 }

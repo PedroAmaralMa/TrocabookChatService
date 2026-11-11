@@ -1,5 +1,6 @@
 package com.trocabook.api.chat.Chat.Listener;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.trocabook.api.chat.Chat.Config.RabbitMQConfig;
@@ -7,6 +8,7 @@ import com.trocabook.api.chat.Chat.Model.DTO.EventoChatDTO;
 import com.trocabook.api.chat.Chat.Model.DTO.MensagemDTO;
 import com.trocabook.api.chat.Chat.Service.IChatService;
 import com.trocabook.api.chat.Chat.Service.NotificacaoService;
+import org.springframework.amqp.core.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -15,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
+import java.io.IOException;
 
 @Component
 public class ChatQueueListener {
@@ -73,46 +75,87 @@ public class ChatQueueListener {
     public void escutarParaEntregaEmTempoReal(Object payload) {
         log.info("Mensagem/Evento consumido da fila '{}' para entrega via WebSocket.", RabbitMQConfig.QUEUE_DELIVERY);
         try {
-            if (payload instanceof Map<?, ?> map) {
-                if (map.containsKey("tipo")) {
-                    payload = objectMapper.convertValue(map, EventoChatDTO.class);
-                } else {
-                    payload = objectMapper.convertValue(map, MensagemDTO.class);
-                }
+            Object payloadNormalizado = normalizarPayloadEntrega(payload);
+            EventoChatDTO evento;
+            MensagemDTO mensagem;
+
+            if (payloadNormalizado instanceof MensagemDTO mensagemDTO) {
+                mensagem = mensagemDTO;
+                evento = new EventoChatDTO(EventoChatDTO.TipoEvento.NOVA_MENSAGEM, mensagemDTO);
+            } else if (payloadNormalizado instanceof EventoChatDTO eventoDTO) {
+                evento = eventoDTO;
+                mensagem = eventoDTO.getMensagem();
+            } else {
+                log.error("Tipo de payload não suportado na fila '{}': {}",
+                        RabbitMQConfig.QUEUE_DELIVERY,
+                        payloadNormalizado == null ? "null" : payloadNormalizado.getClass().getName());
+                return;
             }
 
-            if (payload instanceof MensagemDTO mensagemDTO) {
-
-                String u1 = mensagemDTO.getUidRemetente().compareTo(mensagemDTO.getUidDestinatario()) < 0
-                        ? mensagemDTO.getUidRemetente() : mensagemDTO.getUidDestinatario();
-                String u2 = mensagemDTO.getUidRemetente().compareTo(mensagemDTO.getUidDestinatario()) < 0
-                        ? mensagemDTO.getUidDestinatario() : mensagemDTO.getUidRemetente();
-
-                String destinoTopico = "/topic/conversa." + mensagemDTO.getUidAnuncio() + "." + u1 + "." + u2;
-
-                EventoChatDTO evento = new EventoChatDTO(EventoChatDTO.TipoEvento.NOVA_MENSAGEM, mensagemDTO);
-                messagingTemplate.convertAndSend(destinoTopico, evento);
-                log.info("Nova mensagem entregue via WebSocket no tópico: '{}'", destinoTopico);
-
-            } else if (payload instanceof EventoChatDTO eventoDTO) {
-                // Novo fluxo para Edição ou Exclusão sincronizadas via RabbitMQ
-                MensagemDTO mensagem = eventoDTO.getMensagem();
-                if (mensagem == null) return;
-
-                String u1 = mensagem.getUidRemetente().compareTo(mensagem.getUidDestinatario()) < 0
-                        ? mensagem.getUidRemetente() : mensagem.getUidDestinatario();
-                String u2 = mensagem.getUidRemetente().compareTo(mensagem.getUidDestinatario()) < 0
-                        ? mensagem.getUidDestinatario() : mensagem.getUidRemetente();
-
-                String destinoTopico = "/topic/conversa." + mensagem.getUidAnuncio() + "." + u1 + "." + u2;
-
-                messagingTemplate.convertAndSend(destinoTopico, eventoDTO);
-                log.info("Evento '{}' entregue via WebSocket no tópico: '{}'", eventoDTO.getTipo(), destinoTopico);
+            if (mensagem == null) {
+                log.error("Evento '{}' recebido da fila '{}' sem mensagem para determinar o tópico STOMP.",
+                        evento.getTipo(), RabbitMQConfig.QUEUE_DELIVERY);
+                return;
             }
+
+            if (estaEmBranco(mensagem.getUidRemetente())
+                    || estaEmBranco(mensagem.getUidDestinatario())
+                    || estaEmBranco(mensagem.getUidAnuncio())) {
+                log.error("Mensagem recebida da fila '{}' sem UID necessário para roteamento. ID: '{}'",
+                        RabbitMQConfig.QUEUE_DELIVERY, mensagem.getId());
+                return;
+            }
+
+            String u1 = mensagem.getUidRemetente().compareTo(mensagem.getUidDestinatario()) < 0
+                    ? mensagem.getUidRemetente() : mensagem.getUidDestinatario();
+            String u2 = mensagem.getUidRemetente().compareTo(mensagem.getUidDestinatario()) < 0
+                    ? mensagem.getUidDestinatario() : mensagem.getUidRemetente();
+            String destinoTopico = "/topic/conversa." + mensagem.getUidAnuncio() + "." + u1 + "." + u2;
+
+            messagingTemplate.convertAndSend(destinoTopico, evento);
+            log.info("Evento '{}' da mensagem '{}' entregue via WebSocket no tópico: '{}'",
+                    evento.getTipo(), mensagem.getId(), destinoTopico);
         } catch (Exception e) {
             log.error("Erro ao entregar evento via WebSocket na fila '{}': {}", RabbitMQConfig.QUEUE_DELIVERY, e.getMessage(), e);
             throw e;
         }
+    }
+
+    private Object normalizarPayloadEntrega(Object payload) {
+        if (payload instanceof MensagemDTO || payload instanceof EventoChatDTO) {
+            return payload;
+        }
+        if (payload == null) {
+            return null;
+        }
+
+        try {
+            JsonNode node;
+            if (payload instanceof Message amqpMessage) {
+                node = objectMapper.readTree(amqpMessage.getBody());
+            } else if (payload instanceof byte[] body) {
+                node = objectMapper.readTree(body);
+            } else if (payload instanceof String json) {
+                node = objectMapper.readTree(json);
+            } else {
+                node = objectMapper.valueToTree(payload);
+            }
+
+            if (!node.isObject()) {
+                throw new IllegalArgumentException("Payload da fila de entrega não é um objeto JSON.");
+            }
+
+            if (node.has("mensagem") || node.has("tipo") || node.has("idMensagemExcluida")) {
+                return objectMapper.treeToValue(node, EventoChatDTO.class);
+            }
+            return objectMapper.treeToValue(node, MensagemDTO.class);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Não foi possível converter o payload da fila de entrega.", e);
+        }
+    }
+
+    private boolean estaEmBranco(String valor) {
+        return valor == null || valor.isBlank();
     }
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NOTIFICATIONS)
