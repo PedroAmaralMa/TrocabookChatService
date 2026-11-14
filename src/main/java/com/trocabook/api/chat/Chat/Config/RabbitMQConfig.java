@@ -28,6 +28,7 @@ public class RabbitMQConfig {
     public static final String QUEUE_DELIVERY = "chat.queue.delivery";
     public static final String QUEUE_NOTIFICATIONS = "chat.queue.notifications";
     public static final String ROUTING_KEY_MESSAGES = "chat.message.#";
+    public static final String QUEUE_SILENT_SYNC = "chat.queue.silent.sync";
     public static final String ROUTING_KEY_DELIVERY = "chat.delivery.#";
 
     // --- Declaração de Topologia ---
@@ -53,6 +54,11 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Queue silentSyncQueue() {
+        return new Queue(QUEUE_SILENT_SYNC, true);
+    }
+
+    @Bean
     public Binding bindingStorage(Queue storageQueue, TopicExchange chatExchange) {
         return BindingBuilder.bind(storageQueue).to(chatExchange).with(ROUTING_KEY_MESSAGES);
     }
@@ -65,6 +71,11 @@ public class RabbitMQConfig {
     @Bean
     public Binding bindingNotifications(Queue notificationsQueue, TopicExchange chatExchange) {
         return BindingBuilder.bind(notificationsQueue).to(chatExchange).with(ROUTING_KEY_MESSAGES);
+    }
+
+    @Bean
+    public Binding bindingSilentSync(Queue silentSyncQueue, TopicExchange chatExchange) {
+        return BindingBuilder.bind(silentSyncQueue).to(chatExchange).with(ROUTING_KEY_DELIVERY);
     }
 
     // --- Gerenciador de Topologia (Cria filas/bindings no CloudAMQP) ---

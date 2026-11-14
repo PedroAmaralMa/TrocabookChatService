@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.trocabook.api.chat.Chat.Config.RabbitMQConfig;
 import com.trocabook.api.chat.Chat.Model.DTO.EventoChatDTO;
 import com.trocabook.api.chat.Chat.Model.DTO.MensagemDTO;
+import com.trocabook.api.chat.Chat.Service.FcmPushService;
 import com.trocabook.api.chat.Chat.Service.IChatService;
 import com.trocabook.api.chat.Chat.Service.NotificacaoService;
 import org.springframework.amqp.core.Message;
@@ -27,6 +28,7 @@ public class ChatQueueListener {
     private final IChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificacaoService notificacaoService;
+    private final FcmPushService fcmPushService;
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
 
@@ -35,10 +37,12 @@ public class ChatQueueListener {
             IChatService chatService,
             SimpMessagingTemplate messagingTemplate,
             NotificacaoService notificacaoService,
+            FcmPushService fcmPushService,
             RabbitTemplate rabbitTemplate) {
         this.chatService = chatService;
         this.messagingTemplate = messagingTemplate;
         this.notificacaoService = notificacaoService;
+        this.fcmPushService = fcmPushService;
         this.rabbitTemplate = rabbitTemplate;
         this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
@@ -168,6 +172,38 @@ public class ChatQueueListener {
         } catch (Exception e) {
             log.error("Erro ao processar notificação a partir da fila '{}': {}", RabbitMQConfig.QUEUE_NOTIFICATIONS, e.getMessage(), e);
             throw e;
+        }
+    }
+
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_SILENT_SYNC)
+    public void escutarParaSincronizacaoSilenciosa(Object payload) {
+        log.info("Evento consumido da fila de sincronização silenciosa '{}'.", RabbitMQConfig.QUEUE_SILENT_SYNC);
+        try {
+            Object payloadNormalizado = normalizarPayloadEntrega(payload);
+            MensagemDTO mensagem = null;
+            String tipoEvento = "ATUALIZAR";
+
+            if (payloadNormalizado instanceof EventoChatDTO eventoDTO) {
+                mensagem = eventoDTO.getMensagem();
+                tipoEvento = eventoDTO.getTipo() != null ? eventoDTO.getTipo().name() : "ATUALIZAR";
+            } else if (payloadNormalizado instanceof MensagemDTO mensagemDTO) {
+                mensagem = mensagemDTO;
+            }
+
+            if (mensagem == null || mensagem.getUidDestinatario() == null) {
+                return;
+            }
+
+            // Busca o token FCM do destinatário para avisá-lo silenciosamente
+            var usuario = notificacaoService.buscarPorUidUsuario(mensagem.getUidDestinatario());
+            if (usuario != null && usuario.getFcmToken() != null) {
+                String fcmToken = usuario.getFcmToken();
+
+                // Dispara o push silencioso
+                fcmPushService.enviarPushSilencioso(fcmToken, tipoEvento, mensagem.getUidAnuncio(), mensagem.getUidRemetente(), mensagem.getUidDestinatario());
+            }
+        } catch (Exception e) {
+            log.error("Erro ao processar sincronização silenciosa: {}", e.getMessage(), e);
         }
     }
 }

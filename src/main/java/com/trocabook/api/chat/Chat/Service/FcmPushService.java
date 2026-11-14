@@ -59,6 +59,34 @@ public class FcmPushService {
         }
     }
 
+    public void enviarPushSilencioso(String fcmToken, String tipoEvento, String uidAnuncio, String uidRemetente, String uidDestinatario) {
+        if (fcmToken == null || fcmToken.isBlank()) {
+            return;
+        }
+
+        String tokenMascarado = mascararToken(fcmToken);
+        log.info("Enviando push silencioso via FCM. Evento: '{}', Token: '{}'", tipoEvento, tokenMascarado);
+
+        Message.Builder messageBuilder = Message.builder()
+                .setToken(fcmToken)
+                .putData("tipoEvento", tipoEvento) // Ex: "MENSAGEM_EDITADA", "MENSAGEM_EXCLUIDA", "NOVA_MENSAGEM"
+                .putData("uidAnuncio", uidAnuncio);
+
+        if (uidRemetente != null) {
+            messageBuilder.putData("uidRemetente", uidRemetente);
+        }
+        if (uidDestinatario != null) {
+            messageBuilder.putData("uidDestinatario", uidDestinatario);
+        }
+
+        try {
+            String messageId = FirebaseMessaging.getInstance().send(messageBuilder.build());
+            log.info("Push silencioso com dados completos enviado com sucesso. MessageId: '{}'", messageId);
+        } catch (FirebaseMessagingException e) {
+            log.error("Erro ao enviar push silencioso via FCM: {}", e.getMessage(), e);
+        }
+    }
+
     private String mascararToken(String token) {
         if (token == null) {
             return "null";

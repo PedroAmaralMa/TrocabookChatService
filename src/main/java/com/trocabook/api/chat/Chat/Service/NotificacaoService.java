@@ -97,6 +97,11 @@ public class NotificacaoService {
         }
     }
 
+    public UsuarioNotificacao buscarPorUidUsuario(String uid) {
+        Optional<UsuarioNotificacao> usuarioNotificacaoOptional = usuarioNotificacaoRepository.findByUidUsuario(uid);
+        return usuarioNotificacaoOptional.orElse(null);
+    }
+
     private boolean estaInscritoNoCanal(String uidUsuario, String canal) {
         var user = userRegistry.getUser(uidUsuario);
         if (user == null) {
