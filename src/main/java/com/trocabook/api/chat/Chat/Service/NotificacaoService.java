@@ -82,7 +82,9 @@ public class NotificacaoService {
                     usuario.getFcmToken(),
                     "Nova mensagem no Trocabook",
                     mensagemDTO.getConteudo(),
-                    uidAnuncio
+                    uidAnuncio,
+                    mensagemDTO.getUidRemetente(),
+                    uidDestinatario
             );
         } else if (usuario.getEmail() != null && !usuario.getEmail().isBlank()) {
             log.info("FCM token ausente. Engatilhando envio de notificação por e-mail para '{}' (usuário '{}')", usuario.getEmail(), uidDestinatario);

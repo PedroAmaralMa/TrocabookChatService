@@ -14,7 +14,7 @@ public class FcmPushService {
 
     private static final Logger log = LoggerFactory.getLogger(FcmPushService.class);
 
-    public void enviarPushNotification(String fcmToken, String titulo, String corpo, String uidAnuncio) {
+    public void enviarPushNotification(String fcmToken, String titulo, String corpo, String uidAnuncio, String uidRemetente, String uidDestinatario) {
         if (fcmToken == null || fcmToken.isBlank()) {
             log.warn("Tentativa de enviar push notification com token FCM nulo ou vazio.");
             return;
@@ -23,17 +23,24 @@ public class FcmPushService {
         String tokenMascarado = mascararToken(fcmToken);
         log.info("Solicitada notificação push via FCM. Título: '{}', Token: '{}', Anúncio: '{}'", titulo, tokenMascarado, uidAnuncio);
 
-        Message message = Message.builder()
+        Message.Builder messageBuilder = Message.builder()
                 .setToken(fcmToken)
                 .setNotification(Notification.builder()
                         .setTitle(titulo)
                         .setBody(corpo)
                         .build())
-                .putData("uidAnuncio", uidAnuncio)
-                .build();
+                .putData("tipo", "CHAT_MENSAGEM")
+                .putData("uidAnuncio", uidAnuncio);
+
+        if (uidRemetente != null) {
+            messageBuilder.putData("uidRemetente", uidRemetente);
+        }
+        if (uidDestinatario != null) {
+            messageBuilder.putData("uidDestinatario", uidDestinatario);
+        }
 
         try {
-            String messageId = FirebaseMessaging.getInstance().send(message);
+            String messageId = FirebaseMessaging.getInstance().send(messageBuilder.build());
             log.info("Notificação push enviada com sucesso via FCM. MessageId: '{}', Token: '{}'", messageId, tokenMascarado);
         } catch (FirebaseMessagingException e) {
             System.err.println("Erro ao enviar Push Notification via FCM: " + e.getMessage());
