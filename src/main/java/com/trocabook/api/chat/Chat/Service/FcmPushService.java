@@ -21,15 +21,13 @@ public class FcmPushService {
         }
 
         String tokenMascarado = mascararToken(fcmToken);
-        log.info("Solicitada notificação push via FCM. Título: '{}', Token: '{}', Anúncio: '{}'", titulo, tokenMascarado, uidAnuncio);
+        log.info("Solicitada notificação push (Data-only) via FCM. Título: '{}', Token: '{}', Anúncio: '{}'", titulo, tokenMascarado, uidAnuncio);
 
         Message.Builder messageBuilder = Message.builder()
                 .setToken(fcmToken)
-                .setNotification(Notification.builder()
-                        .setTitle(titulo)
-                        .setBody(corpo)
-                        .build())
                 .putData("tipo", "CHAT_MENSAGEM")
+                .putData("titulo", titulo)
+                .putData("corpo", corpo)
                 .putData("uidAnuncio", uidAnuncio);
 
         if (uidRemetente != null) {
