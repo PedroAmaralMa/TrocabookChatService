@@ -33,10 +33,10 @@ class FcmPushServiceTest {
         String tokenNulo = null;
 
         // QUANDO o serviço tenta enviar a notificação push
-        fcmPushService.enviarPushNotification(tokenNulo, "Título", "Corpo", "anuncio1");
+        fcmPushService.enviarPushNotification(tokenNulo, "Título", "Corpo", "anuncio1", "rementente1", "destinatario1");
 
         // ENTÃO nenhuma exceção é lançada e o fluxo encerra imediatamente
-        assertDoesNotThrow(() -> fcmPushService.enviarPushNotification(null, "T", "C", "A"));
+    assertDoesNotThrow(() -> fcmPushService.enviarPushNotification(null, "T", "C", "A", "R", "D"));
     }
 
     @Test
@@ -46,10 +46,10 @@ class FcmPushServiceTest {
         String tokenVazio = "   ";
 
         // QUANDO o envio é solicitado
-        fcmPushService.enviarPushNotification(tokenVazio, "Título", "Corpo", "anuncio1");
+        fcmPushService.enviarPushNotification(tokenVazio, "Título", "Corpo", "anuncio1", "rementente1", "destinatario1");
 
         // ENTÃO o envio não é processado
-        assertDoesNotThrow(() -> fcmPushService.enviarPushNotification(tokenVazio, "T", "C", "A"));
+        assertDoesNotThrow(() -> fcmPushService.enviarPushNotification(tokenVazio, "T", "C", "A", "R", "D"));
     }
 
     @Test
@@ -64,7 +64,7 @@ class FcmPushServiceTest {
             when(messagingMock.send(any(Message.class))).thenReturn("msg-id-12345");
 
             // QUANDO a notificação push é enviada
-            fcmPushService.enviarPushNotification(tokenCurto, "Título Teste", "Corpo Teste", "anuncio1");
+            fcmPushService.enviarPushNotification(tokenCurto, "Título Teste", "Corpo Teste", "anuncio1", "rementente1", "destinatario1");
 
             // ENTÃO a mensagem é enviada ao Firebase
             verify(messagingMock, times(1)).send(any(Message.class));
@@ -83,7 +83,7 @@ class FcmPushServiceTest {
             when(messagingMock.send(any(Message.class))).thenReturn("msg-id-long-67890");
 
             // QUANDO a notificação push é enviada
-            fcmPushService.enviarPushNotification(tokenLongo, "Novo Título", "Novo Corpo", "anuncio2");
+            fcmPushService.enviarPushNotification(tokenLongo, "Novo Título", "Novo Corpo", "anuncio2", "rementente2", "destinatario2");
 
             // ENTÃO a mensagem é enviada e os dados conferem
             ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
@@ -107,7 +107,7 @@ class FcmPushServiceTest {
             when(messagingMock.send(any(Message.class))).thenThrow(exceptionMock);
 
             // QUANDO o envio é tentado
-            fcmPushService.enviarPushNotification(token, "Título", "Corpo", "anuncio1");
+            fcmPushService.enviarPushNotification(token, "Título", "Corpo", "anuncio1", "rementente1", "destinatario1");
 
             // ENTÃO a exceção é tratada internamente sem propagar erro para a aplicação
             verify(messagingMock, times(1)).send(any(Message.class));
@@ -130,7 +130,7 @@ class FcmPushServiceTest {
             when(messagingMock.send(any(Message.class))).thenThrow(exceptionMock);
 
             // QUANDO o envio é tentado
-            fcmPushService.enviarPushNotification(token, "Título", "Corpo", "anuncio1");
+            fcmPushService.enviarPushNotification(token, "Título", "Corpo", "anuncio1", "rementente1", "destinatario1");
 
             // ENTÃO a exceção é capturada e tratada adequadamente
             verify(messagingMock, times(1)).send(any(Message.class));
@@ -153,7 +153,7 @@ class FcmPushServiceTest {
             when(messagingMock.send(any(Message.class))).thenThrow(exceptionMock);
 
             // QUANDO o envio é tentado
-            fcmPushService.enviarPushNotification(token, "Título", "Corpo", "anuncio1");
+            fcmPushService.enviarPushNotification(token, "Título", "Corpo", "anuncio1", "rementente1", "destinatario1");
 
             // ENTÃO a exceção é capturada e tratada
             verify(messagingMock, times(1)).send(any(Message.class));
@@ -176,7 +176,7 @@ class FcmPushServiceTest {
             when(messagingMock.send(any(Message.class))).thenThrow(exceptionMock);
 
             // QUANDO o envio é tentado
-            fcmPushService.enviarPushNotification(token, "Título", "Corpo", "anuncio1");
+            fcmPushService.enviarPushNotification(token, "Título", "Corpo", "anuncio1", "rementente1", "destinatario1");
 
             // ENTÃO a exceção é tratada no bloco default do switch
             verify(messagingMock, times(1)).send(any(Message.class));
@@ -199,7 +199,7 @@ class FcmPushServiceTest {
             when(messagingMock.send(any(Message.class))).thenThrow(exceptionMock);
 
             // QUANDO o envio é tentado
-            fcmPushService.enviarPushNotification(token, "Título", "Corpo", "anuncio1");
+            fcmPushService.enviarPushNotification(token, "Título", "Corpo", "anuncio1", "rementente1", "destinatario1");
 
             // ENTÃO o bloco else é executado sem quebrar o fluxo
             verify(messagingMock, times(1)).send(any(Message.class));

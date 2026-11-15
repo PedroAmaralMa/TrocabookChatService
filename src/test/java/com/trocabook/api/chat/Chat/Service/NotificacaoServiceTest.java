@@ -134,7 +134,7 @@ class NotificacaoServiceTest {
 
         // ENTÃO nenhuma notificação deve ser enviada por push ou e-mail
         verify(usuarioNotificacaoRepository, never()).findByUidUsuario(any());
-        verify(fcmPushService, never()).enviarPushNotification(any(), any(), any(), any());
+        verify(fcmPushService, never()).enviarPushNotification(any(), any(), any(), any(), any(), any());
         verify(emailService, never()).enviarNotificacaoNovaMensagem(any(), any(), any(), any());
     }
 
@@ -155,7 +155,7 @@ class NotificacaoServiceTest {
         notificacaoService.processarNotificacao(mensagemDTO);
 
         // ENTÃO nenhum envio ocorre
-        verify(fcmPushService, never()).enviarPushNotification(any(), any(), any(), any());
+        verify(fcmPushService, never()).enviarPushNotification(any(), any(), any(), any(), any(), any());
         verify(emailService, never()).enviarNotificacaoNovaMensagem(any(), any(), any(), any());
     }
 
@@ -185,7 +185,9 @@ class NotificacaoServiceTest {
                 eq("fcm-token-valido-12345"),
                 eq("Nova mensagem no Trocabook"),
                 eq("Olá, livro disponível?"),
-                eq("anuncio1")
+                eq("anuncio1"),
+                eq("userA"),
+                eq("userB")
         );
         verify(emailService, never()).enviarNotificacaoNovaMensagem(any(), any(), any(), any());
     }
@@ -218,7 +220,7 @@ class NotificacaoServiceTest {
                 eq("Proposta de troca enviada"),
                 eq("anuncio1")
         );
-        verify(fcmPushService, never()).enviarPushNotification(any(), any(), any(), any());
+        verify(fcmPushService, never()).enviarPushNotification(any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -243,7 +245,7 @@ class NotificacaoServiceTest {
         notificacaoService.processarNotificacao(mensagemDTO);
 
         // ENTÃO nenhuma chamada de push ou e-mail é efetuada
-        verify(fcmPushService, never()).enviarPushNotification(any(), any(), any(), any());
+        verify(fcmPushService, never()).enviarPushNotification(any(), any(), any(), any(), any(), any());
         verify(emailService, never()).enviarNotificacaoNovaMensagem(any(), any(), any(), any());
     }
 
@@ -281,7 +283,9 @@ class NotificacaoServiceTest {
                 eq("token-valido-userA"),
                 eq("Nova mensagem no Trocabook"),
                 eq("Mensagem invertida"),
-                eq("anuncio99")
+                eq("anuncio99"),
+                eq("userZ"),
+                eq("userA")
         );
     }
 }
